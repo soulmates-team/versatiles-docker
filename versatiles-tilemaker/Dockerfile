@@ -34,7 +34,7 @@ RUN git clone --depth 1 https://github.com/systemed/tilemaker.git /tmp/tilemaker
     rm -rf /tmp/tilemaker
 
 # Add Shortbread configuration
-RUN git clone --depth 1 -q --branch versatiles https://github.com/versatiles-org/shortbread-tilemaker /opt/shortbread && \
+RUN git clone --depth 1 -q --branch negabaritmap https://github.com/soulmates-team/shortbread-tilemaker /opt/shortbread && \
     bash /opt/shortbread/get-shapefiles.sh && \
     rm /opt/shortbread/data/*.zip && \
     rm -rf /opt/shortbread/.git /opt/shortbread/data/simplified-water-polygons-split-3857
