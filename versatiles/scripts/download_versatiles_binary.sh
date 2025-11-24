@@ -3,20 +3,20 @@
 set -e
 
 TARGETPLATFORM=$1
-URL="https://github.com/versatiles-org/versatiles-rs/releases/latest/download/versatiles"
+BASE_URL="https://github.com/versatiles-org/versatiles-rs/releases/latest/download"
 
 case $TARGETPLATFORM in
 	"linux/amd64-musl")
-		curl -sL "${URL}-linux-musl-x86_64.tar.gz" | tar x -z -f - versatiles
+		URL="${BASE_URL}/versatiles-linux-musl-x86_64.tar.gz"
 		;;
 	"linux/arm64-musl")
-		curl -sL "${URL}-linux-musl-aarch64.tar.gz" | tar x -z -f - versatiles
+		URL="${BASE_URL}/versatiles-linux-musl-aarch64.tar.gz"
 		;;
 	"linux/amd64-gnu")
-		curl -sL "${URL}-linux-gnu-x86_64.tar.gz" | tar x -z -f - versatiles
+		URL="${BASE_URL}/versatiles-linux-gnu-x86_64.tar.gz"
 		;;
 	"linux/arm64-gnu")
-		curl -sL "${URL}-linux-gnu-aarch64.tar.gz" | tar x -z -f - versatiles
+		URL="${BASE_URL}/versatiles-linux-gnu-aarch64.tar.gz"
 		;;
 	*)
 		echo "Unknown target plattform $TARGETPLATFORM"
@@ -24,4 +24,6 @@ case $TARGETPLATFORM in
 		;;
 esac
 
+echo "Downloading versatiles binary from $URL"
+curl --retry 3 -sL $URL | tar x -zf - versatiles
 chmod +x versatiles

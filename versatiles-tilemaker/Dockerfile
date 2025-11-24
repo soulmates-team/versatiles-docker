@@ -24,7 +24,8 @@ RUN apt update -y && \
         rapidjson-dev \
         unzip \
         wget \
-        zlib1g-dev && \
+        zlib1g-dev \
+        tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Add Tilemaker
@@ -40,12 +41,11 @@ RUN git clone --depth 1 -q --branch negabaritmap https://github.com/soulmates-te
     rm -rf /opt/shortbread/.git /opt/shortbread/data/simplified-water-polygons-split-3857
 
 # Add VersaTiles
-RUN curl -Ls "https://github.com/versatiles-org/versatiles-rs/raw/main/scripts/install-unix.sh" | sh
+RUN curl --retry 3 -Ls "https://github.com/versatiles-org/versatiles-rs/raw/main/scripts/install-unix.sh" | sh
 
 WORKDIR /opt/shortbread
-
-ENV DATADIR=/app
+STOPSIGNAL SIGTERM
 
 COPY --chmod=0755 scripts/generate_tiles.sh /usr/local/bin/generate_tiles
 
-ENTRYPOINT ["generate_tiles"]
+ENTRYPOINT ["tini", "-g", "--", "generate_tiles"]

@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 source ../scripts/utils.sh
 parse_arguments "$@"
 VER=$(fetch_release_tag)
-NAME="versatiles-nginx"
+NAME="versatiles-gdal"
 
 echo "👷 Building $NAME Docker images for version $VER"
 
@@ -17,7 +17,7 @@ echo "👷 Building $NAME Docker images for version $VER"
 if ! $needs_push || $needs_testing; then
     echo "👷 Building images"
     # Resolve build arguments for local / push modes later
-    build_load_image versatiles-nginx "$NAME" latest
+    build_load_image versatiles-gdal "$NAME" latest
 fi
 
 ###############################################################################
@@ -25,22 +25,30 @@ fi
 ###############################################################################
 if $needs_testing; then
     echo "🧪 Running smoke-tests"
-
-    output="'FRONTEND' is required (Allowed: standard|dev|min|none)"
-    result=$(docker run --rm "$NAME:latest" 2>&1 || true)
-    if [[ "$result" != *"$output"* ]]; then
-        echo "❌ Test failed: expected \"$result\" to contain \"$output\"" >&2
+    
+    output=$(docker run --rm "versatiles-gdal" -V 2>&1 || true)
+    expected="versatiles ${VER#v}"
+    if [[ "$output" != "$expected" ]]; then
+        echo "  ❌ Test 1 failed: expected '$expected', got '$output'\n" >&2
         exit 1
     fi
 
-    output="'TILE_SOURCES' is required"
-    result=$(docker run --rm -e "FRONTEND=min" "$NAME:latest" 2>&1 || true)
-    if [[ "$result" != *"$output"* ]]; then
-        echo "❌ Test failed: expected \"$result\" to contain \"$output\"" >&2
+    TEST_DIR=$(readlink -f "../testdata/")
+    mkdir -p $TEST_DIR/temp
+    output=$(docker run --rm -v $TEST_DIR:/data versatiles-gdal convert liechtenstein.vpl ./temp/liechtenstein.mbtiles 2>&1 || true)
+    expected="finished converting tiles"
+    if [[ "$output" != *"$expected" ]]; then
+        echo "  ❌ Test 2 failed: expected output to end with '$expected', got '$output'" >&2
+        exit 1
+    fi
+    file_size=$(wc -c $TEST_DIR/temp/liechtenstein.mbtiles | awk '{print $1}')
+    rm -rf $TEST_DIR/temp
+    if [[ $file_size -lt 16000000 ]]; then
+        echo "  ❌ Test 2 failed: expected output file size to be greater than 16MB, got '$file_size'" >&2
         exit 1
     fi
 
-    echo "✅ All images tested successfully."
+    echo "✅ Image tested successfully."
 fi
 
 ###############################################################################
@@ -48,6 +56,6 @@ fi
 ###############################################################################
 if $needs_push; then
     echo "🚀 Building and pushing images to Docker Hub"
-    build_push_image versatiles-nginx "$NAME" "latest,$VER"
-    update_docker_description versatiles-nginx
+    build_push_image versatiles-gdal "$NAME" "latest,$VER"
+    update_docker_description versatiles-gdal
 fi
